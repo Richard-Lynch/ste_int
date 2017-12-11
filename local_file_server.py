@@ -1,19 +1,7 @@
-#!/Users/richie/miniconda3/bin/python3
+#!/usr/local/bin/python3
 import requests
 from collections import defaultdict
-
-# from flask_restful import marshal
-# import my_errors
-# my_errors.make_classes(my_errors.errors)
-# import my_fields
-# import check
-# import decrypt_message
-# --- security ---
-# from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-# --- mongo ---
-# from pymongo import MongoClient
-# from bson.objectid import ObjectId
-# import mongo_stuff
+import json
 
 
 class local_file_server():
@@ -30,7 +18,7 @@ class local_file_server():
 
     def get_one_file_from_args(self, *args, **kwargs):
         # parse args ***
-        if 'message' in kwargs:
+        if 'message' in kwargs and kwargs['message'] is not None:
             message = kwargs['message']
         else:
             return None
@@ -52,6 +40,11 @@ class local_file_server():
         if _id in self.files:
             this_file = self.files[_id]
         else:
+            print('cant get file')
+            print('files', self.files)
+            print('id', _id)
+            print('type', type(_id))
+
             return None
 
         # filter
@@ -63,7 +56,7 @@ class local_file_server():
 
     def add_file(self, *args, **kwargs):
         # parse argsA ***
-        if 'message' in kwargs:
+        if 'message' in kwargs and kwargs['message'] is not None:
             message = kwargs['message']
         else:
             return None
@@ -72,7 +65,6 @@ class local_file_server():
         # check args ***
         if not all(must_have in message for must_have in must_haves):
             return None
-
         # create file *
         new_file = {k: message[k] for k in must_haves}
         # new_file = {
@@ -81,9 +73,12 @@ class local_file_server():
         #     'content': message['content'],
         #     'your mom': messgae['your mom']
         # }
-        new_file['_id'] = self.get_next_id()
+        _id = self.get_next_id()
+        new_file['_id'] = _id
+        new_file['url'] = "http://127.0.0.1:8050/files/" + str(_id)
         # save file *
-        self.files[self.file_id_counter] = new_file
+        self.files[_id] = new_file
+        return new_file
 
     def get_next_id(self):
         next_id = self.file_id_counter
@@ -92,7 +87,7 @@ class local_file_server():
 
     def edit_file(self, _id, *args, **kwargs):
         # parse args ***
-        if 'message' in kwargs:
+        if 'message' in kwargs and kwargs['message'] is not None:
             message = kwargs['message']
         else:
             return None
@@ -100,18 +95,21 @@ class local_file_server():
         filtered = ['_id']
         edits = {
             k: v
-            for k, v in message.items() if k not in filtered and k is not None
+            for k, v in message.items() if k not in filtered and v is not None
         }
 
         # check for name
         # get file *
         this_file = self.get_one_file_from_id(_id)
+        if this_file is None:
+            return None
         # edit file *
         for k, v in edits.items():
             this_file[k] = v
 
         # save file *sd
         self.files[_id] = this_file
+        return this_file
 
     def delete_file(self, _id, *args, **kwargs):
         # get file *

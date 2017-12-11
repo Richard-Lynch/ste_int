@@ -1,4 +1,4 @@
-#!/Users/richie/miniconda3/bin/python3
+#!/usr/local/bin/python3
 
 from flask import Flask
 from flask_restful import Api, Resource
@@ -14,13 +14,13 @@ class file_server_api(Resource):
         global file_server
         self.file_server = file_server
         self.reqparse = reqparse.RequestParser()
-        self.reqparse.add_arguement('message', type=str, location='json')
+        self.reqparse.add_argument('message', type=dict, location='json')
         super(file_server_api, self).__init__()
 
     def get(self, _id):
         kwargs = self.reqparse.parse_args()
-        if int(_id) == 0:
-            this_file = self.file_server.get_one_file_from_id(**kwargs)
+        if _id != 0:
+            this_file = self.file_server.get_one_file_from_id(_id, **kwargs)
         else:
             this_file = self.file_server.get_one_file_from_args(**kwargs)
         if this_file is not None:
@@ -30,15 +30,15 @@ class file_server_api(Resource):
 
     def post(self, _id):
         kwargs = self.reqparse.parse_args()
-        this_file = self.file_server.edit_file(**kwargs)
+        this_file = self.file_server.add_file(**kwargs)
         if this_file is not None:
-            return {'create file': this_file}
+            return {'created file': this_file}
         else:
-            return {'error': 'file not edited'}
+            return {'error': 'file not created'}
 
     def put(self, _id):
         kwargs = self.reqparse.parse_args()
-        this_file = self.file_server.edit_file(**kwargs)
+        this_file = self.file_server.edit_file(_id, **kwargs)
         if this_file is not None:
             return {'edited file': this_file}
         else:
@@ -46,14 +46,14 @@ class file_server_api(Resource):
 
     def delete(self, _id):
         kwargs = self.reqparse.parse_args()
-        this_file = self.file_server.delete_file(**kwargs)
+        this_file = self.file_server.delete_file(_id, **kwargs)
         if this_file is not None:
             return {'deleted file': this_file}
         else:
             return {'error': 'file not deleted'}
 
 
-api.add_resource(file_server_api, '/files/<string:_id>', endpoint='files')
+api.add_resource(file_server_api, '/files/<int:_id>', endpoint='files')
 
 if __name__ == '__main__':
     file_server = local_file_server()
